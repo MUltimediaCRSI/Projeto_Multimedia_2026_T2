@@ -1,0 +1,128 @@
+* {
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    background-image: url("Paisagem-1.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+    font-size: 12pt;
+}
+
+.background-picker {
+    width: 100%;
+    max-width: 900px;
+    margin-bottom: 25px;
+    padding: 16px;
+    background-color: #fff;
+    border: 5pt solid #2563eb;
+    text-align: center;
+}
+
+.background-picker label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: bold;
+}
+
+.grid-container {
+    display: flex;
+    flex-direction: row;
+    gap: 25px;
+    width: 100%;
+    max-width: 900px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.card {
+    flex: 1;
+    min-width: 320px;
+    max-width: 420px;
+    padding: 30px;
+    background-color: #fff;
+    border: 5pt solid #2563eb;
+    text-align: center;
+}
+
+h2 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #1a1a1a;
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 24pt;
+    font-weight: bold;
+}
+
+label {
+    display: block;
+    margin-bottom: 6px;
+    color: #333;
+    font-weight: 600;
+    text-align: left;
+}
+
+input[type="number"] {
+    width: 100%;
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #fff;
+    border: 5pt solid #2563eb;
+    font: inherit;
+}
+
+input[type="file"] {
+    max-width: 100%;
+    font: inherit;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    background-color: #2563eb;
+    color: #fff;
+    border: none;
+    font: inherit;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+button:hover {
+    background-color: #1d4ed8;
+}
+
+.resultado,
+.erro {
+    display: none;
+    margin-top: 20px;
+    padding: 12px;
+    background-color: #fff;
+    border: 5pt solid #2563eb;
+    font-weight: bold;
+}
+
+.resultado {
+    color: #0369a1;
+}
+
+.erro {
+    color: #dc2626;
+}
+
+@media (max-width: 480px) {
+    .card {
+        min-width: 0;
+        width: 100%;
+    }
+}
