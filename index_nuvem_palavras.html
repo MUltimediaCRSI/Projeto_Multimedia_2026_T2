@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f5f3ef">
+  <title>Palavra em Cartaz</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #252722;
+      --muted: #777a72;
+      --line: #e7e5df;
+      --paper: #fff;
+      --canvas: #f5f3ef;
+      --accent: #315e4b;
+      --accent-dark: #244936;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--canvas);
+      color: var(--ink);
+      font: 15px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    button, input, select, textarea { font: inherit; }
+
+    .page { max-width: 1220px; margin: 0 auto; padding: 40px 28px 56px; }
+    header { margin-bottom: 28px; }
+    .eyebrow {
+      color: var(--accent);
+      font-size: 11px;
+      font-weight: 750;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+    h1 { margin: 7px 0 4px; font-size: clamp(27px, 4vw, 38px); letter-spacing: -.045em; line-height: 1.12; }
+    header p { max-width: 650px; margin: 9px 0 0; color: var(--muted); }
+
+    .layout { display: grid; grid-template-columns: minmax(300px, 390px) minmax(0, 1fr); gap: 22px; align-items: start; }
+    .panel, .preview-panel { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; }
+    .panel { padding: 22px; }
+    .field { margin-bottom: 19px; }
+    label, .label { display: block; margin-bottom: 7px; font-size: 13px; font-weight: 700; }
+    .hint { color: var(--muted); font-size: 12px; margin-top: 5px; }
+    .word-options {
+      display: flex;
+      max-height: 150px;
+      padding: 8px;
+      flex-wrap: wrap;
+      gap: 7px;
+      overflow-y: auto;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #fbfbf9;
+    }
+    .word-option {
+      display: inline-flex;
+      margin: 0;
+      padding: 5px 8px;
+      align-items: center;
+      gap: 5px;
+      border: 1px solid #dcded7;
+      border-radius: 7px;
+      background: #fff;
+      color: #55584f;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .word-option:has(input:checked) { border-color: #b9cbbf; background: #edf4ef; color: var(--accent-dark); }
+    .word-option input { margin: 0; accent-color: var(--accent); }
+    .word-option-count { margin: 6px 0 0; color: var(--muted); font-size: 11px; }
+    textarea, select, input[type="number"], input[type="color"] {
+      width: 100%;
+      border: 1px solid #dcded7;
+      border-radius: 9px;
+      background: #fff;
+      color: var(--ink);
+    }
+    textarea { min-height: 116px; padding: 11px 12px; resize: vertical; }
+    select, input[type="number"] { min-height: 42px; padding: 8px 10px; }
+    textarea:focus, select:focus, input:focus-visible { outline: 3px solid #315e4b24; border-color: var(--accent); }
+    .two-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .color-row { display: flex; gap: 10px; align-items: center; }
+    input[type="color"] { width: 48px; height: 42px; padding: 4px; cursor: pointer; }
+    .color-value { color: var(--muted); font-size: 12px; }
+
+    .file-picker {
+      display: block;
+      padding: 12px;
+      border: 1px dashed #c8ccc3;
+      border-radius: 10px;
+      background: #fbfbf9;
+    }
+    .file-picker input { display: block; max-width: 100%; margin-top: 7px; font-size: 12px; }
+    .file-name { overflow: hidden; color: var(--muted); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+    .check-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; color: #53564f; font-size: 13px; }
+    .check-row input { accent-color: var(--accent); }
+
+    .actions { display: flex; gap: 10px; margin-top: 22px; }
+    button {
+      min-height: 43px;
+      padding: 9px 15px;
+      border: 0;
+      border-radius: 9px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button:disabled { cursor: not-allowed; opacity: .48; }
+    .primary { flex: 1; background: var(--accent); color: #fff; }
+    .primary:hover:not(:disabled) { background: var(--accent-dark); }
+    .secondary { background: #f0f1ed; color: var(--ink); }
+    .status { min-height: 20px; margin: 11px 0 0; color: var(--muted); font-size: 12px; }
+    .status.error { color: #a33d32; }
+
+    .preview-panel { min-height: 620px; padding: 18px; }
+    .preview-head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; margin-bottom: 14px; }
+    .preview-head strong { font-size: 14px; }
+    #dimensions-label { color: var(--muted); font-size: 12px; }
+    .canvas-wrap {
+      display: flex;
+      min-height: 540px;
+      padding: 20px;
+      align-items: center;
+      justify-content: center;
+      overflow: auto;
+      border-radius: 11px;
+      background-color: #f2f1ed;
+      background-image: radial-gradient(#d9d7d0 0.7px, transparent 0.7px);
+      background-size: 14px 14px;
+    }
+    canvas {
+      display: block;
+      width: auto;
+      height: auto;
+      max-width: 100%;
+      max-height: 560px;
+      object-fit: contain;
+      box-shadow: 0 7px 28px #25272220;
+    }
+    .empty-state { max-width: 270px; color: #777a72; text-align: center; font-size: 13px; }
+    .empty-state span { display: block; margin-bottom: 8px; font-size: 30px; }
+    footer { margin-top: 17px; color: var(--muted); font-size: 12px; }
+
+    @media (max-width: 800px) {
+      .page { padding: 28px 16px 40px; }
+      .layout { grid-template-columns: 1fr; }
+      .preview-panel { min-height: 390px; }
+      .canvas-wrap { min-height: 320px; }
+      canvas { max-height: 460px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <header>
+      <div class="eyebrow">Ateliê de palavras</div>
+      <h1>Palavra em Cartaz</h1>
+      <p>Transforme uma frase numa nuvem de palavras. Escolha as cores, o formato e o fundo; no fim, descarregue o cartaz em PNG.</p>
+    </header>
+
+    <div class="layout">
+      <section class="panel" aria-label="Opções do cartaz">
+        <div class="field">
+          <label for="phrase">A sua frase</label>
+          <textarea id="phrase" maxlength="5000" placeholder="Escreva ou cole aqui uma frase...">Estar em toda a parte onde houver Bem a fazer e sofrimento a aliviar</textarea>
+          <div class="hint">Pode escrever várias frases ou repetir palavras para lhes dar mais destaque. As palavras comuns são removidas automaticamente.</div>
+        </div>
+
+        <div class="field">
+          <span class="label">Palavras a incluir</span>
+          <div id="word-options" class="word-options" role="group" aria-label="Escolher as palavras que aparecem no cartaz"></div>
+          <p id="word-option-count" class="word-option-count" aria-live="polite"></p>
+          <div class="hint">Desmarque as palavras que não quer no cartaz. Atualize a frase para rever a lista.</div>
+        </div>
+
+        <div class="field">
+          <label for="palette">Paleta de cores das palavras</label>
+          <select id="palette">
+            <option value="forest">Floresta</option>
+            <option value="sunset">Pôr do sol</option>
+            <option value="ocean">Oceano</option>
+            <option value="berry">Frutos silvestres</option>
+            <option value="mono">Preto e branco</option>
+            <option value="rainbow">Arco-íris</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <span class="label">Tamanho do cartaz (px)</span>
+          <div class="two-columns">
+            <div>
+              <label for="width" class="hint">Largura</label>
+              <input id="width" type="number" min="300" max="5000" step="50" value="1200">
+            </div>
+            <div>
+              <label for="height" class="hint">Altura</label>
+              <input id="height" type="number" min="300" max="5000" step="50" value="1600">
+            </div>
+          </div>
+          <div class="hint">Entre 300 e 5000 px por lado. A proporção escolhida será mantida no PNG.</div>
+        </div>
+
+        <div class="field">
+          <span class="label">Fundo do cartaz</span>
+          <div class="color-row">
+            <input id="background-color" type="color" value="#ffffff" aria-label="Escolher cor de fundo">
+            <span id="color-value" class="color-value">#ffffff</span>
+          </div>
+          <label class="file-picker" for="background-image" style="margin-top: 11px">
+            <strong>Ou usar uma imagem do computador</strong>
+            <div class="hint">A imagem é processada apenas neste navegador.</div>
+            <input id="background-image" type="file" accept="image/*">
+            <div id="file-name" class="file-name">Nenhuma imagem selecionada</div>
+          </label>
+          <label class="check-row" for="remove-image">
+            <input id="remove-image" type="checkbox" disabled>
+            Remover imagem e usar a cor escolhida
+          </label>
+        </div>
+
+        <div class="actions">
+          <button id="generate" class="primary" type="button">Gerar cartaz</button>
+          <button id="download" class="secondary" type="button" disabled>Descarregar PNG</button>
+        </div>
+        <p id="status" class="status" role="status" aria-live="polite"></p>
+      </section>
+
+      <section class="preview-panel" aria-label="Pré-visualização do cartaz">
+        <div class="preview-head">
+          <strong>Pré-visualização</strong>
+          <span id="dimensions-label">1200 × 1600 px</span>
+        </div>
+        <div class="canvas-wrap">
+          <div id="empty-state" class="empty-state"><span>✳</span>O seu cartaz aparecerá aqui.</div>
+          <canvas id="poster" hidden aria-label="Pré-visualização do cartaz gerado"></canvas>
+        </div>
+        <footer>O ficheiro PNG é criado localmente no seu dispositivo.</footer>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    "use strict";
+
+    const palettes = {
+      forest: ["#1f5138", "#3c7652", "#82a75d", "#c0a64b", "#243e36", "#6b8e7a"],
+      sunset: ["#a33147", "#d05b45", "#ed9853", "#75435f", "#e3bd65", "#563948"],
+      ocean: ["#164e63", "#087e8b", "#35a7a0", "#4b82a1", "#6e9fc1", "#334e68"],
+      berry: ["#612f74", "#964f83", "#c05a72", "#df8b79", "#534878", "#a23e5c"],
+      mono: ["#191919", "#444444", "#666666", "#282828", "#555555"],
+      rainbow: ["#df493d", "#e68732", "#d0a82f", "#35845a", "#3978ad", "#7952a1"]
+    };
+    const portugueseStopwords = new Set(
+      "a à ao aos aquela aquelas aquele aqueles aquilo as às até com como da das de dela delas dele deles depois do dos e é ela elas ele eles em entre era essa essas esse esses esta estas este estes eu foi foram há isso isto já lhe lhes mais mas me mesmo minha minhas muito na nas nem no nos nós nossa nossas nosso nossos num numa o os ou para pela pelas pelo pelos por qual quando que quem se sem ser seu seus sua suas também te tem tinha tu um uma umas uns você".split(" ")
+    );
+    const excludedWords = new Set();
+
+    const phraseInput = document.querySelector("#phrase");
+    const wordOptions = document.querySelector("#word-options");
+    const wordOptionCount = document.querySelector("#word-option-count");
+    const paletteInput = document.querySelector("#palette");
+    const widthInput = document.querySelector("#width");
+    const heightInput = document.querySelector("#height");
+    const backgroundInput = document.querySelector("#background-color");
+    const imageInput = document.querySelector("#background-image");
+    const removeImageInput = document.querySelector("#remove-image");
+    const canvas = document.querySelector("#poster");
+    const context = canvas.getContext("2d");
+    const status = document.querySelector("#status");
+    const downloadButton = document.querySelector("#download");
+    let backgroundImage = null;
+
+    function setStatus(message, isError = false) {
+      status.textContent = message;
+      status.classList.toggle("error", isError);
+    }
+
+    function dimensions() {
+      const width = Number(widthInput.value);
+      const height = Number(heightInput.value);
+      if (!Number.isInteger(width) || !Number.isInteger(height) || width < 300 || height < 300 || width > 5000 || height > 5000) {
+        throw new Error("Indique uma largura e uma altura entre 300 e 5000 px.");
+      }
+      if (width * height > 16000000) {
+        throw new Error("Este cartaz é demasiado grande. Reduza as dimensões para um máximo de 16 milhões de píxeis.");
+      }
+      return { width, height };
+    }
+
+    function updateDimensionsLabel() {
+      document.querySelector("#dimensions-label").textContent = `${widthInput.value || "—"} × ${heightInput.value || "—"} px`;
+    }
+
+    function drawBackground(width, height) {
+      context.clearRect(0, 0, width, height);
+      if (backgroundImage && !removeImageInput.checked) {
+        const scale = Math.max(width / backgroundImage.width, height / backgroundImage.height);
+        const imageWidth = backgroundImage.width * scale;
+        const imageHeight = backgroundImage.height * scale;
+        context.drawImage(backgroundImage, (width - imageWidth) / 2, (height - imageHeight) / 2, imageWidth, imageHeight);
+      } else {
+        context.fillStyle = backgroundInput.value;
+        context.fillRect(0, 0, width, height);
+      }
+    }
+
+    function getWordCounts(text) {
+      const matches = text.toLocaleLowerCase("pt-PT").match(/[\p{L}\p{N}]+(?:['’][\p{L}\p{N}]+)*/gu) || [];
+      const counts = new Map();
+      for (const word of matches) {
+        if (word.length < 2 || portugueseStopwords.has(word)) continue;
+        counts.set(word, (counts.get(word) || 0) + 1);
+      }
+      return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "pt-PT"));
+    }
+
+    function updateWordOptions() {
+      const words = getWordCounts(phraseInput.value);
+      const currentWords = new Set(words.map(([word]) => word));
+      for (const word of excludedWords) {
+        if (!currentWords.has(word)) excludedWords.delete(word);
+      }
+
+      wordOptions.replaceChildren();
+      for (const [word, count] of words) {
+        const label = document.createElement("label");
+        label.className = "word-option";
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = !excludedWords.has(word);
+        checkbox.setAttribute("aria-label", `Incluir «${word}» (${count} ${count === 1 ? "ocorrência" : "ocorrências"})`);
+        checkbox.addEventListener("change", () => {
+          if (checkbox.checked) excludedWords.delete(word);
+          else excludedWords.add(word);
+          updateWordOptionCount(words.length);
+          if (canvas.width) generatePoster();
+        });
+        const wordLabel = document.createElement("span");
+        wordLabel.textContent = `${word} (${count})`;
+        label.append(checkbox, wordLabel);
+        wordOptions.append(label);
+      }
+      updateWordOptionCount(words.length);
+    }
+
+    function updateWordOptionCount(total) {
+      const included = total - [...excludedWords].filter(word =>
+        getWordCounts(phraseInput.value).some(([candidate]) => candidate === word)
+      ).length;
+      wordOptionCount.textContent = `${included} de ${total} palavras selecionadas`;
+    }
+
+    function getWords(text) {
+      return getWordCounts(text)
+        .filter(([word]) => !excludedWords.has(word))
+        .slice(0, 80);
+    }
+
+    function intersects(rect, placed) {
+      const gap = 5;
+      return placed.some(other =>
+        rect.x < other.x + other.width + gap &&
+        rect.x + rect.width + gap > other.x &&
+        rect.y < other.y + other.height + gap &&
+        rect.y + rect.height + gap > other.y
+      );
+    }
+
+    function findPosition(word, fontSize, rotation, width, height, placed) {
+      context.font = `700 ${fontSize}px Arial, sans-serif`;
+      const measured = context.measureText(word);
+      const boxWidth = Math.ceil((rotation ? fontSize : measured.width) + 8);
+      const boxHeight = Math.ceil((rotation ? measured.width : fontSize) + 8);
+      const maxRadius = Math.hypot(width, height) / 2;
+      for (let i = 0; i < 2200; i++) {
+        const angle = i * 0.19;
+        const radius = 2.2 * Math.sqrt(i);
+        if (radius > maxRadius) break;
+        const x = width / 2 + Math.cos(angle) * radius - boxWidth / 2;
+        const y = height / 2 + Math.sin(angle) * radius - boxHeight / 2;
+        const rect = { x, y, width: boxWidth, height: boxHeight };
+        if (x >= 12 && y >= 12 && x + boxWidth <= width - 12 && y + boxHeight <= height - 12 && !intersects(rect, placed)) {
+          return { ...rect, fontSize, rotation };
+        }
+      }
+      return null;
+    }
+
+    function drawCloud(words, width, height) {
+      const placed = [];
+      const maxCount = words[0][1];
+      const minCount = words[words.length - 1][1];
+      const baseSize = Math.min(width, height) * 0.105;
+      const colors = palettes[paletteInput.value];
+      words.forEach(([word, count], index) => {
+        const normalized = maxCount === minCount ? 1 - (index / Math.max(words.length, 1)) * 0.45 : 0.55 + ((count - minCount) / (maxCount - minCount)) * 0.45;
+        let fontSize = Math.max(15, Math.round(baseSize * normalized));
+        const rotation = Math.random() < 0.17 ? 1 : 0;
+        let position = null;
+        while (fontSize >= 13 && !position) {
+          position = findPosition(word, fontSize, rotation, width, height, placed);
+          if (!position) fontSize = Math.floor(fontSize * 0.88);
+        }
+        if (!position) return;
+        placed.push(position);
+        context.save();
+        context.translate(position.x + position.width / 2, position.y + position.height / 2);
+        if (rotation) context.rotate(-Math.PI / 2);
+        context.font = `700 ${fontSize}px Arial, sans-serif`;
+        context.textAlign = "center";
+        context.textBaseline = "middle";
+        context.fillStyle = colors[index % colors.length];
+        context.fillText(word, 0, 0);
+        context.restore();
+      });
+    }
+
+    function generatePoster() {
+      try {
+        const { width, height } = dimensions();
+        const words = getWords(phraseInput.value.trim());
+        if (!words.length) {
+          throw new Error("Escreva pelo menos uma palavra que não seja uma palavra comum, como «a», «de» ou «e».");
+        }
+        canvas.width = width;
+        canvas.height = height;
+        drawBackground(width, height);
+        drawCloud(words, width, height);
+        canvas.hidden = false;
+        document.querySelector("#empty-state").hidden = true;
+        downloadButton.disabled = false;
+        updateDimensionsLabel();
+        setStatus(`Cartaz criado com ${words.length} palavras diferentes.`);
+      } catch (error) {
+        setStatus(error.message, true);
+      }
+    }
+
+    imageInput.addEventListener("change", () => {
+      const file = imageInput.files && imageInput.files[0];
+      if (!file) return;
+      if (!file.type.startsWith("image/")) {
+        setStatus("Selecione um ficheiro de imagem válido.", true);
+        imageInput.value = "";
+        return;
+      }
+      const reader = new FileReader();
+      reader.addEventListener("load", () => {
+        const image = new Image();
+        image.addEventListener("load", () => {
+          backgroundImage = image;
+          removeImageInput.disabled = false;
+          removeImageInput.checked = false;
+          document.querySelector("#file-name").textContent = file.name;
+          generatePoster();
+        });
+        image.addEventListener("error", () => setStatus("Não foi possível abrir esta imagem.", true));
+        image.src = reader.result;
+      });
+      reader.addEventListener("error", () => setStatus("Não foi possível ler este ficheiro de imagem.", true));
+      reader.readAsDataURL(file);
+    });
+
+    backgroundInput.addEventListener("input", () => {
+      document.querySelector("#color-value").textContent = backgroundInput.value;
+      if (canvas.width) generatePoster();
+    });
+    removeImageInput.addEventListener("change", () => {
+      if (canvas.width) generatePoster();
+    });
+    widthInput.addEventListener("input", updateDimensionsLabel);
+    heightInput.addEventListener("input", updateDimensionsLabel);
+    phraseInput.addEventListener("input", updateWordOptions);
+    document.querySelector("#generate").addEventListener("click", generatePoster);
+    downloadButton.addEventListener("click", () => {
+      if (!canvas.width || !canvas.height) return;
+      canvas.toBlob(blob => {
+        if (!blob) {
+          setStatus("Não foi possível criar o ficheiro PNG.", true);
+          return;
+        }
+        const link = document.createElement("a");
+        link.download = "palavra-em-cartaz.png";
+        link.href = URL.createObjectURL(blob);
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+      }, "image/png");
+    });
+
+    updateWordOptions();
+    updateDimensionsLabel();
+    generatePoster();
+  </script>
+</body>
+</html>
